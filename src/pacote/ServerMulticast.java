@@ -14,99 +14,191 @@ import java.util.Scanner;
 import org.json.*;
 
 public class ServerMulticast {
-	
+
 	public static void main(String[] args) throws IOException {
-		
-		String mensagem = " ";
+
+		String msg = " ";
 		byte[] envio = new byte[1024];
+		byte[] buffer = new byte[1024];
 		LocalDateTime date1 = LocalDateTime.now();
 		Scanner sc = new Scanner(System.in);
-		
-		// Objeto carro : DO LATER
-		String modelo;
-		String nome;
-		String disponivel;
-		String tempo;
-		
-		// Region : Var
-		
+		JSONArray jsonServidor;
+
+		// Region : Socket Config and JSONArray
+
 		JSONArray listModelos = new JSONArray();
 
 		MulticastSocket socket = new MulticastSocket();
 		InetAddress ia = InetAddress.getByName("230.0.0.0");
 
-		while (!mensagem.equals("Servidor Encerrado!")) {
-			
+		while (!msg.equals("Servidor Encerrado!")) {
+
 			int acao = 0;
-			
+
 			Scanner action = new Scanner(System.in);
-			System.out.print("[Servidor] Escolha a ação a ser tomada: \n "
-					+ "1 - Enviar Anuncios | 2 - Emprestimo | 3 - Devolução | 4 - Encerrar Serviço\n");
-			
+			System.out.println("[Servidor] Escolha a ação a ser tomada: \n "
+					+ "1 - Enviar Anuncios | 2 - Registrar Veículos | 3 - Realizar Empréstimo | 4 - Proceder Devolução | 5 - Encerrar Serviço\n");
+
 			acao = action.nextInt();
-			
-			if (acao == 1) {
+
+			if (acao == 1) { // Enviar Anuncios
 				System.out.print("[Servidor] Digite a mensagem para anuncios:\n");
-				mensagem = sc.nextLine();
-				
+				msg = sc.nextLine();
+
 				JSONObject msgJSON = new JSONObject();
-				msgJSON.put("mensagem", mensagem);
+				msgJSON.put("msg", msg);
 				listModelos.put(msgJSON);
-				
-				mensagem = "[" + date1 + "]" + "\n\n ---- Anuncios! ---- \n\n" + mensagem + "\n\n";
-	            for (Object obj : listModelos) {
-	            	JSONObject jsonObject = (JSONObject) obj;		
-	            	if (jsonObject.has("modelo")) {		
-	            		System.out.println(" - " + jsonObject.getString("modelo"));
-	            	}
-	            }
-	            
-	            byte[] jsonEnvio = listModelos.toString().getBytes();
+
+				msg = "[" + date1 + "]" + "\n\n --- Anuncios! --- \n\n" + msg + "\n\n";
+				for (Object obj : listModelos) {
+					JSONObject jsonObject = (JSONObject) obj;
+					if (jsonObject.has("modelo")) {
+						System.out.println("Modelo : " + jsonObject.getString("modelo"));
+					}
+					if (jsonObject.has("disponibilidade")) {
+						System.out.println(" Disponibilidade : " + jsonObject.getString("disponibilidade"));
+					}
+				}
+
+				byte[] jsonEnvio = listModelos.toString().getBytes();
 				envio = jsonEnvio;
 				DatagramPacket pacote = new DatagramPacket(envio, envio.length, ia, 4321);
 				socket.send(pacote);
 
-			} else if (acao == 2) {
-				System.out.print("[Servidor] Digite a lista de carros disponiveis, FIM para terminar :\n");
-				
+			} else if (acao == 2) { // Registrar Veiculos
+				System.out.println("[Servidor] Digite a lista de carros que queira registrar, FIM para terminar :");
+
 				// Region : Registrando novos modelos
-				
+
 				while (true) {
 					JSONObject novoModelo = new JSONObject();
-					System.out.print("[Servidor] Digite o modelo do carro :\n");
-					mensagem = sc.nextLine();
-					
-					if (mensagem.equals("FIM")) {
+					System.out.println("[Servidor] Digite o modelo do carro :\n");
+					msg = sc.nextLine();
+
+					if (msg.equals("FIM")) {
 						break;
 					}
-					
-					novoModelo.put("modelo", mensagem);
+
+					novoModelo.put("modelo", msg);
+					novoModelo.put("nome", "N/A");
+					novoModelo.put("disponibilidade", "disponivel");
+					novoModelo.put("tempo", "N/A");
 					listModelos.put(novoModelo);
-					
+
 				}
-				
-				mensagem = "[" + date1 + "]" + "\nLista de carros disponiveis para aluguel!\n" + mensagem;
-				
+
 				// Region : Listando Todos os Modelos
-				
-	            for (Object obj : listModelos) {
-	                JSONObject jsonObject = (JSONObject) obj;
-	                System.out.println(" - " + jsonObject.getString("modelo"));
-	            }
-	            
-	            // Region : Tratando e enviando novos modelos
-	            
-	            byte[] jsonEnvio = listModelos.toString().getBytes();
+
+				for (Object obj : listModelos) {
+					JSONObject jsonObject = (JSONObject) obj;
+					if (jsonObject.has("modelo")) {
+						System.out.println("Modelo : " + jsonObject.getString("modelo"));
+					}
+					if (jsonObject.has("disponibilidade")) {
+						System.out.println(" Disponibilidade : " + jsonObject.getString("disponibilidade"));
+					}
+				}
+
+				// Region : Tratando e enviando novos modelos
+
+				byte[] jsonEnvio = listModelos.toString().getBytes();
 				envio = jsonEnvio;
+
+				DatagramPacket pacoteRegistro = new DatagramPacket(envio, envio.length, ia, 4322);
+				socket.send(pacoteRegistro);
+
+			} else if (acao == 3) {// Realizar Emprestimo
+
+				// Worflow -> Enviar modelos pro cliente
+				// Cliente vai escolher
+				// Tratar
+				// Retornar novo JSON
+
+				// Region : Enviando Modelos Para o Cliente Alugar
+
+				byte[] jsonEnvio = listModelos.toString().getBytes();
+				envio = jsonEnvio;
+
+				DatagramPacket pacoteModelos = new DatagramPacket(envio, envio.length, ia, 4322);
+				socket.send(pacoteModelos);
+
+				System.out.println("[Servidor] Modelos Enviados ao Cliente, aguardando resposta...\n");
+
+				// Receber Resposta do Aluguel do Cliente
+
+				String msgFromCliente = " ";
+
+				DatagramPacket pacoteEmprestimo = new DatagramPacket(buffer, buffer.length);
+				socket.receive(pacoteEmprestimo);
+
+				System.out.println("Reposta do Cliente Recebida...\n");
+
+				msgFromCliente = new String(pacoteEmprestimo.getData());
+
+				JSONArray jsonCliente = new JSONArray(msgFromCliente);
+
+				jsonServidor = jsonCliente;
+
+				msg = "Aluguel de Carro Efetuado com Sucesso! ";
+
+				JSONObject msgJSONOBJ = new JSONObject();
+				msgJSONOBJ.put("msg", msg);
+
+				for (Object obj : jsonServidor) {
+					JSONObject jsonObject = (JSONObject) obj;
+					if (jsonObject.has("msg")) {
+						System.out.println("[GERENTE] msg DE ALUGUEL : " + jsonObject.getString("msg"));
+					} else if (jsonObject.has("modelo")) {
+						System.out.println(" Modelo : " + jsonObject.getString("modelo") + "Foi alugado para: "
+								+ jsonObject.getString("nome"));
+					}
+				}
+
+			} else if (acao == 4) { // Realizar Devolução 
 				
-				DatagramPacket pacote = new DatagramPacket(envio, envio.length, ia, 4322);
+				// Enviar Modelos Alugados pelo Cliente
+				
+				byte[] jsonEnvio = listModelos.toString().getBytes();
+				envio = jsonEnvio;
+
+				DatagramPacket pacote = new DatagramPacket(envio, envio.length, ia, 4323);
 				socket.send(pacote);
 
-			} else if (acao == 3) {
+				System.out.println("[DEVOLUÇÂO] Modelos Enviados ao Cliente, aguardando resposta...\n");
 
-			} else if (acao == 4) {
+				// Receber Resposta do Aluguel do Cliente
+
+				String msgFromCliente = " ";
+
+				DatagramPacket pacoteDevolucao = new DatagramPacket(buffer, buffer.length);
+				socket.receive(pacoteDevolucao);
+
+				System.out.println("Reposta do Cliente Recebida...\n");
+
+				msgFromCliente = new String(pacoteDevolucao.getData());
+
+				JSONArray jsonCliente = new JSONArray(msgFromCliente);
+
+				jsonServidor = jsonCliente;
+
+				msg = "Aluguel de Carro Efetuado com Sucesso! ";
+
+				JSONObject msgJSON = new JSONObject();
+				msgJSON.put("msg", msg);
+
+				for (Object obj : jsonServidor) {
+					JSONObject jsonObject = (JSONObject) obj;
+					if (jsonObject.has("msg")) {
+						System.out.println("[GERENTE] msg DE ALUGUEL : " + jsonObject.getString("msg"));
+					} else if (jsonObject.has("modelo")) {
+						System.out.println(" Modelo : " + jsonObject.getString("modelo") + "Foi alugado para: "
+								+ jsonObject.getString("nome"));
+					}
+				}			
+
+			} else if (acao == 5) { // Encerrar Conexão
 				System.out.print("[Servidor] Encerrando serviço de atendimento.\n");
-				mensagem = "Servidor Encerrado!";
+				msg = "Servidor Encerrado!";
 				socket.close();
 			}
 

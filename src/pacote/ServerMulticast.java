@@ -49,14 +49,14 @@ public class ServerMulticast {
 				msgJSON.put("msg", msg);
 				listModelos.put(msgJSON);
 
-				msg = "[" + date1 + "]" + "\n\n --- Anuncios! --- \n\n" + msg + "\n\n";
+				msg = "[" + date1 + "]" + " --- Anuncios! --- \n" + msg + "\n\n";
 				for (Object obj : listModelos) {
 					JSONObject jsonObject = (JSONObject) obj;
 					if (jsonObject.has("modelo")) {
 						System.out.println("Modelo : " + jsonObject.getString("modelo"));
 					}
 					if (jsonObject.has("disponibilidade")) {
-						System.out.println(" Disponibilidade : " + jsonObject.getString("disponibilidade"));
+						System.out.println("Disponibilidade : " + jsonObject.getString("disponibilidade"));
 					}
 				}
 
@@ -95,7 +95,7 @@ public class ServerMulticast {
 						System.out.println("Modelo : " + jsonObject.getString("modelo"));
 					}
 					if (jsonObject.has("disponibilidade")) {
-						System.out.println(" Disponibilidade : " + jsonObject.getString("disponibilidade"));
+						System.out.println("Disponibilidade : " + jsonObject.getString("disponibilidade"));
 					}
 				}
 
